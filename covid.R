@@ -7,7 +7,6 @@ cov <- read.csv("covid19.csv") %>%
         select(-X1)
 
 
-
 # Explore your data frame 
 print(dim(cov))   # number of rows and columns
 print(cov[1:10, 1:10])  # first 10 rows and 10 columns
@@ -78,13 +77,14 @@ pca_coord <- data.frame(Sample = cov$Sample,
                         X = pca$x[, 1],
                         Y = pca$x[, 2],
                         Z = pca$x[, 3]) %>% 
-        inner_join(cov[, 1:3], by = "Sample")
+        inner_join(cov[, 1:3], by = "Sample") %>%
+        mutate(Covid19 = ifelse(str_detect(Sample, "N"), "Negative", "Positive"))
 
 print(pca_coord)
 
 
-# Plot the PCA result in 2D space 
-pca_2D_plot <- ggplot(pca_coord,
+# Plot the PCA result in 2D space (total observations)
+pca_2D_plot1 <- ggplot(pca_coord,
                       aes(x = X, 
                           y = Y, 
                           color = ICU,
@@ -94,7 +94,13 @@ pca_2D_plot <- ggplot(pca_coord,
              x = "PC1 (28%)",
              y = "PC2 (19%)")
 
-print(pca_2D_plot)
+print(pca_2D_plot1)
+
+# Plot the PCA result in 2D space (splitted observations by infected status)
+pca_2D_plot2 <- pca_2D_plot1 + 
+        facet_grid(~ Covid19)
+
+print(pca_2D_plot2)
 
 ########################################## Hierarchical Clustering ##########################################
 
@@ -122,7 +128,7 @@ Hierarchical_clustering <- hclust(distance,
 plot(Hierarchical_clustering)
 
 # Heatmap + dendrogram
-meta <- cov[, 1:2] 
+meta <- pca_coord[, 5:7] 
 rownames(meta) <- rownames(coord_matrix)
 
 pheatmap(coord_matrix,
@@ -170,20 +176,26 @@ plot(hierarchical_plot1)
 
 
 hierarchical_plot2 <- ggplot(pca_coord_cleaned,
-                            aes(x = X, 
-                                y = Y, 
-                                color = ICU, 
-                                shape = gender)) + 
+                             aes(x = X, 
+                                 y = Y, 
+                                 color = ICU, 
+                                 shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(hcluster_number ~ hclustering_by) + 
         labs(title = "Hierarchical clustering (k = 8, h = 100)",
              x = "PC1 (28%)",
              y = "PC2 (19%)")
 
+
 plot(hierarchical_plot2)
 
-# Recall original PCA plot
-print(pca_2D_plot)
+# hcluster_k 
+# cluster1: positive & nonICU 
+# cluster2: positive 
+# cluster4: ICU 
+# cluster 3 & 7: (relatively) negative 
+
+
 
 
 
@@ -253,8 +265,8 @@ kmeans_plot2 <- ggplot(pca_coord,
                        aes(x = X,
                            y = Y, 
                            color = ICU, 
-                           shape = gender)) + 
-        geom_point(size = 2, alpha = 0.5) + 
+                           shape = Covid19)) + 
+        geom_point(size = 2, alpha = 0.5) +  
         facet_grid(~ kmcluster) + 
         labs(title = "K-Means Clustering", 
              x = "PC1 (28%)",
@@ -263,7 +275,6 @@ kmeans_plot2 <- ggplot(pca_coord,
 print(kmeans_plot2)
 
 
-print(pca_2D_plot)
 
 
 ########################################## t-SNE ##########################################
@@ -296,6 +307,7 @@ data_clean_fn <- function(tsne_object, perplexity) {
                    Y = tsne_object$Y[, 2],
                    gender = pca_coord$gender, 
                    ICU = pca_coord$ICU,
+                   Covid19 = pca_coord$Covid19,
                    Perplexity = factor(perplexity)) 
 }
 
@@ -310,8 +322,8 @@ tsne_compare_df <- rbind(data_clean_fn(tsne1, 1),
 perplexity_plot <- ggplot(tsne_compare_df,
                           aes(x = X, 
                               y = Y, 
-                              color = gender, 
-                              shape = ICU)) + 
+                              color = ICU, 
+                              shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(~ Perplexity) + 
         labs(title = "t-SNE with Perplexity = 1, 2, 5, and 10", 
@@ -321,7 +333,7 @@ perplexity_plot <- ggplot(tsne_compare_df,
 print(perplexity_plot)
 
 # Subset with Perplexity = 2
-tsne_pp <- filter(tsne_compare_df, Perplexity == 5)
+tsne_pp <- filter(tsne_compare_df, Perplexity == 2)
 rownames(tsne_pp) <- rownames(meta)
 
 pheatmap(tsne_pp[, 1:2],
@@ -355,7 +367,10 @@ tsne_hclustering1 <- ggplot(tsne_pp,
                            aes(x = X,
                                y = Y, 
                                color = hcluster)) + 
-        geom_point(size = 2, alpha = 0.5)
+        geom_point(size = 2, alpha = 0.5) + 
+        labs(title = "t-SNE and Hierarchical Clustering",
+             x = "Dim1",
+             y = "Dim2")
 
 print(tsne_hclustering1)
 
@@ -363,8 +378,16 @@ tsne_hclustering2 <- ggplot(tsne_pp,
                             aes(x = X,
                                 y = Y, 
                                 color = ICU,
-                                shape = gender)) + 
+                                shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
-        facet_grid(Perplexity ~ hcluster)
+        facet_grid( ~ hcluster) + 
+        labs(title = "t-SNE and Hierarchical Clustering",
+             x = "Dim1",
+             y = "Dim2")
 
 print(tsne_hclustering2)
+
+# Cluster1: positive & nonICU 
+# Cluster2: positive & ICU 
+# Cluster4: ICU 
+# Cluster7: nonICU
