@@ -321,7 +321,7 @@ perplexity_plot <- ggplot(tsne_compare_df,
 print(perplexity_plot)
 
 # Subset with Perplexity = 2
-tsne_pp <- filter(tsne_compare_df, Perplexity == 1)
+tsne_pp <- filter(tsne_compare_df, Perplexity == 5)
 rownames(tsne_pp) <- rownames(meta)
 
 pheatmap(tsne_pp[, 1:2],
@@ -343,21 +343,28 @@ Hierarchical_clustering_tsne <- hclust(distance,
 # Create a dendrogram
 plot(Hierarchical_clustering_tsne)
 
+# Extract the clustering result (8 clusters)
+# and clean data
 hcluster_tsne <- cutree(Hierarchical_clustering_tsne,
                         k = 8)
-
 tsne_pp$hcluster <- factor(hcluster_tsne)
 
-ggplot(tsne_pp,
-       aes(x = X,
-           y = Y, 
-           color = hcluster)) + 
+
+# Plotting tSNE/hierarchical clustering results 
+tsne_hclustering1 <- ggplot(tsne_pp,
+                           aes(x = X,
+                               y = Y, 
+                               color = hcluster)) + 
         geom_point(size = 2, alpha = 0.5)
 
-ggplot(tsne_pp,
-       aes(x = X,
-           y = Y, 
-           color = ICU,
-           shape = gender)) + 
+print(tsne_hclustering1)
+
+tsne_hclustering2 <- ggplot(tsne_pp,
+                            aes(x = X,
+                                y = Y, 
+                                color = ICU,
+                                shape = gender)) + 
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(Perplexity ~ hcluster)
+
+print(tsne_hclustering2)
