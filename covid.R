@@ -391,3 +391,67 @@ print(tsne_hclustering2)
 # Cluster2: positive & ICU 
 # Cluster4: ICU 
 # Cluster7: nonICU
+
+
+
+########################################## Dimensionality Reduction in a scRNA-seq pipleline ##########################################
+
+# Load Seurat package
+library(Seurat)
+
+# Data cleaning: row = gene, column = sample
+# (returns a count matrix)
+rownames(feature_matrix) <- rownames(coord_matrix)
+count_matrix <- t(feature_matrix)
+
+# Explore your input count matrix
+print(dim(count_matrix))
+print(count_matrix[1:10, 1:10])
+
+# Create a seurat object 
+seurat <- CreateSeuratObject(counts = count_matrix,
+                             meta.data = meta)
+
+# Normalize your data 
+seurat <- NormalizeData(seurat,
+                        normalization.method = "LogNormalize")
+seurat <- FindVariableFeatures(seurat)
+seurat <- ScaleData(seurat)
+
+
+# Run PCA 
+seurat <- RunPCA(seurat)
+
+# Cluster 
+seurat <- FindNeighbors(seurat)
+seurat <- FindClusters(seurat)
+
+# Run t-SNE (with perplexity 2)
+seurat <- RunTSNE(seurat, 
+                  perplexity = 2)
+
+
+# Plot the PCA result 
+DimPlot(object = seurat, 
+        reduction = "pca") + 
+        ggtitle("PCA") 
+
+# Plot the t-SNE result
+DimPlot(object = seurat, 
+        reduction = "tsne") + 
+        ggtitle("t-SNE") 
+
+# Calculate the Number of Significant Features 
+VariableFeaturePlot(seurat)
+
+# Plote distribution of eigenvalues of the first dimension in each cluster
+VlnPlot(seurat, features = "PC_1")
+VlnPlot(seurat, features = "PC_1", split.by = "ICU")
+VlnPlot(seurat, features = "PC_1", split.by = "Covid19")
+VlnPlot(seurat, features = "PC_1", split.by = "gender")
+VlnPlot(seurat, features = "tSNE_1")
+
+# Heatmap (Gene expression profile in each cluster)
+DoHeatmap(seurat)
+
+
