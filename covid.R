@@ -12,9 +12,9 @@ print(dim(cov))   # number of rows and columns
 print(cov[1:10, 1:10])  # first 10 rows and 10 columns
 
 
-# Create feature_matrix 
+# Create feature_matrix (input for running dimensionality reduction)
 feature_matrix <- cov[, 4:ncol(cov)]
-
+print(feature_matrix[1:5, 1:5])
 
 ########################################## PCA ########################################## 
 
@@ -44,14 +44,14 @@ pca_df <- data.frame(prop_var = pve[1:10],
 
 print(pca_df)
 
-# Create a plot about proportion of variance change 
+# Create a scree (elbow) plot about proportion of variance change 
 prop_var_plot <- ggplot(pca_df,
                         aes(x = PC, 
                             y = prop_var,
                             group = 1)) +
         geom_line() + 
         geom_point() +
-        labs(title = "Proportion of Variance Explained by PC1-10",
+        labs(title = "Scree (elbow) plot: Proportion of Variance Explained by PC1-10",
              y = "Proportion of Variance Explained")
 
 print(prop_var_plot)
@@ -95,6 +95,7 @@ pca_2D_plot1 <- ggplot(pca_coord,
              y = "PC2 (19%)")
 
 print(pca_2D_plot1)
+# left: nonICU, right: ICU
 
 # Plot the PCA result in 2D space (splitted observations by infected status)
 pca_2D_plot2 <- pca_2D_plot1 + 
@@ -112,13 +113,16 @@ coord_matrix <- cov[, 1:3] %>%
         column_to_rownames(var = "sample_code") %>%
         as.matrix()
 
-
+print(coord_matrix)
 
 
 # Calculate distance: (X, Y, Z) coordinates
 # (returns a distance matrix)
 distance <- dist(coord_matrix, 
                  method = "euclidean")
+
+print(distance)
+
 
 # Perform hierarchical clustering 
 Hierarchical_clustering <- hclust(distance, 
@@ -241,11 +245,12 @@ kmc <- kmeans(x = coord_matrix,
 # (returns a series of cluster numbers)
 kmc_cluster <- factor(kmc$cluster)
 
+print(kmc_cluster)
 
 # Combine the kmeans clustering result with the pca coordinate table 
 pca_coord$kmcluster <- kmc_cluster
 
-
+print(pca_coord)
 
 # Plot the result of k-means clustering
 kmeans_plot1 <- ggplot(pca_coord,
@@ -267,7 +272,7 @@ kmeans_plot2 <- ggplot(pca_coord,
                            color = ICU, 
                            shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) +  
-        facet_grid(~ kmcluster) + 
+        facet_grid(gender ~ kmcluster) + 
         labs(title = "K-Means Clustering", 
              x = "PC1 (28%)",
              y = "PC2 (19%)")
@@ -290,11 +295,13 @@ tSNE_fn <- function(pp) {
         # tSNE
         set.seed(277)
         Rtsne(as.matrix(feature_matrix), 
-              PCA = T,                 # Preliminary PCA
+              PCA = TRUE,              # Preliminary PCA
               perplexity = pp,         # Perplexity
               max_iter = 2000,         # Max iteration number  
               dims = 2)                # Number of output dimensions 
 }
+
+# Run t-SNE (returns t-SNE objects)
 tsne1 <- tSNE_fn(1)
 tsne2 <- tSNE_fn(2)
 tsne5 <- tSNE_fn(5)
@@ -318,6 +325,8 @@ tsne_compare_df <- rbind(data_clean_fn(tsne1, 1),
                          data_clean_fn(tsne5, 5),
                          data_clean_fn(tsne10, 10))
 
+print(tsne_compare_df)
+
 # Check out the relationship btw perplexity and the coordinates 
 perplexity_plot <- ggplot(tsne_compare_df,
                           aes(x = X, 
@@ -336,12 +345,6 @@ print(perplexity_plot)
 tsne_pp <- filter(tsne_compare_df, Perplexity == 2)
 rownames(tsne_pp) <- rownames(meta)
 
-pheatmap(tsne_pp[, 1:2],
-         clustering_distance_rows = "euclidean",
-         annotation_row = meta,
-         fontsize_row = 5,
-         main = "Heatmap")
-
 
 # Calculate distance: (X, Y, Z) coordinates
 # (returns a distance matrix)
@@ -356,11 +359,16 @@ Hierarchical_clustering_tsne <- hclust(distance,
 plot(Hierarchical_clustering_tsne)
 
 # Extract the clustering result (8 clusters)
-# and clean data
+
 hcluster_tsne <- cutree(Hierarchical_clustering_tsne,
                         k = 8)
+
+print(hcluster_tsne)
+
+# Clean data
 tsne_pp$hcluster <- factor(hcluster_tsne)
 
+print(tsne_pp)
 
 # Plotting tSNE/hierarchical clustering results 
 tsne_hclustering1 <- ggplot(tsne_pp,
