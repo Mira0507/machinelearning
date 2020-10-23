@@ -52,7 +52,8 @@ prop_var_plot <- ggplot(pca_df,
         geom_line() + 
         geom_point() +
         labs(title = "Scree (elbow) plot: Proportion of Variance Explained by PC1-10",
-             y = "Proportion of Variance Explained")
+             y = "Proportion of Variance Explained") + 
+        geom_vline(xintercept = 3, color = "red")
 
 print(prop_var_plot)
 
@@ -148,6 +149,10 @@ pheatmap(coord_matrix,
 # (returns a series of cluster number)
 cut_by_k <- cutree(Hierarchical_clustering, k = 8)
 cut_by_h <- cutree(Hierarchical_clustering, h = 100)
+
+# Re-visit the dendrogram
+plot(Hierarchical_clustering)
+abline(h = 100, col = "red")
 
 print(cut_by_k)
 print(cut_by_h)
