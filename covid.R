@@ -80,7 +80,7 @@ pca_coord <- data.frame(Sample = cov$Sample,
         inner_join(cov[, 1:3], by = "Sample") %>%
         mutate(Covid19 = ifelse(str_detect(Sample, "N"), "Negative", "Positive"))
 
-print(pca_coord)
+print(head(pca_coord))
 
 
 # Plot the PCA result in 2D space (total observations)
@@ -92,7 +92,8 @@ pca_2D_plot1 <- ggplot(pca_coord,
         geom_point(size = 2, alpha = 0.5) +
         labs(title = "PCA",
              x = "PC1 (28%)",
-             y = "PC2 (19%)")
+             y = "PC2 (19%)") + 
+        theme_bw()
 
 print(pca_2D_plot1)
 # left: nonICU, right: ICU
@@ -113,7 +114,7 @@ coord_matrix <- cov[, 1:3] %>%
         column_to_rownames(var = "sample_code") %>%
         as.matrix()
 
-print(coord_matrix)
+print(head(coord_matrix))
 
 
 # Calculate distance: (X, Y, Z) coordinates
@@ -124,7 +125,8 @@ distance <- dist(coord_matrix,
 print(distance)
 
 
-# Perform hierarchical clustering 
+# Perform hierarchical clustering
+# (returns an hclust object)
 Hierarchical_clustering <- hclust(distance, 
                                   method = "average")
 
@@ -155,7 +157,7 @@ print(cut_by_h)
 pca_coord$hcluster_k <- factor(cut_by_k)
 pca_coord$hcluster_h <- factor(cut_by_h)
 
-print(pca_coord)
+print(head(pca_coord))
         
 # Clean the data frame before plotting
 pca_coord_cleaned <- gather(pca_coord,
@@ -163,7 +165,7 @@ pca_coord_cleaned <- gather(pca_coord,
                             hcluster_number, 
                             c("hcluster_k", "hcluster_h"))
 
-print(pca_coord_cleaned)
+print(head(pca_coord_cleaned))
 
 # Plot hierarchical clustering results 
 hierarchical_plot1 <- ggplot(pca_coord_cleaned,
@@ -174,7 +176,8 @@ hierarchical_plot1 <- ggplot(pca_coord_cleaned,
         facet_grid(~ hclustering_by) + 
         labs(title = "Hierarchical clustering (k = 8, h = 100)",
              x = "PC1 (28%)",
-             y = "PC2 (19%)")
+             y = "PC2 (19%)") +
+        theme_bw()
 
 plot(hierarchical_plot1)
 
@@ -188,7 +191,8 @@ hierarchical_plot2 <- ggplot(pca_coord_cleaned,
         facet_grid(hcluster_number ~ hclustering_by) + 
         labs(title = "Hierarchical clustering (k = 8, h = 100)",
              x = "PC1 (28%)",
-             y = "PC2 (19%)")
+             y = "PC2 (19%)") + 
+        theme_bw()
 
 
 plot(hierarchical_plot2)
@@ -250,7 +254,7 @@ print(kmc_cluster)
 # Combine the kmeans clustering result with the pca coordinate table 
 pca_coord$kmcluster <- kmc_cluster
 
-print(pca_coord)
+print(head(pca_coord))
 
 # Plot the result of k-means clustering
 kmeans_plot1 <- ggplot(pca_coord,
@@ -260,7 +264,8 @@ kmeans_plot1 <- ggplot(pca_coord,
         geom_point(size = 2, alpha = 0.5) + 
         labs(title = "K-Means Clustering", 
              x = "PC1 (28%)",
-             y = "PC2 (19%)")
+             y = "PC2 (19%)") +
+        theme_bw()
 
 print(kmeans_plot1)
 
@@ -275,7 +280,8 @@ kmeans_plot2 <- ggplot(pca_coord,
         facet_grid(gender ~ kmcluster) + 
         labs(title = "K-Means Clustering", 
              x = "PC1 (28%)",
-             y = "PC2 (19%)")
+             y = "PC2 (19%)") +
+        theme_bw()
 
 print(kmeans_plot2)
 
@@ -325,7 +331,7 @@ tsne_compare_df <- rbind(data_clean_fn(tsne1, 1),
                          data_clean_fn(tsne5, 5),
                          data_clean_fn(tsne10, 10))
 
-print(tsne_compare_df)
+print(head(tsne_compare_df))
 
 # Check out the relationship btw perplexity and the coordinates 
 perplexity_plot <- ggplot(tsne_compare_df,
@@ -337,7 +343,8 @@ perplexity_plot <- ggplot(tsne_compare_df,
         facet_grid(~ Perplexity) + 
         labs(title = "t-SNE with Perplexity = 1, 2, 5, and 10", 
              x = "Dim1",
-             y = "Dim2")
+             y = "Dim2") + 
+        theme_bw()
 
 print(perplexity_plot)
 
@@ -368,7 +375,7 @@ print(hcluster_tsne)
 # Clean data
 tsne_pp$hcluster <- factor(hcluster_tsne)
 
-print(tsne_pp)
+print(head(tsne_pp))
 
 # Plotting tSNE/hierarchical clustering results 
 tsne_hclustering1 <- ggplot(tsne_pp,
@@ -378,7 +385,8 @@ tsne_hclustering1 <- ggplot(tsne_pp,
         geom_point(size = 2, alpha = 0.5) + 
         labs(title = "t-SNE and Hierarchical Clustering",
              x = "Dim1",
-             y = "Dim2")
+             y = "Dim2") +
+        theme_bw()
 
 print(tsne_hclustering1)
 
@@ -391,13 +399,14 @@ tsne_hclustering2 <- ggplot(tsne_pp,
         facet_grid( ~ hcluster) + 
         labs(title = "t-SNE and Hierarchical Clustering",
              x = "Dim1",
-             y = "Dim2")
+             y = "Dim2") + 
+        theme_bw()
 
 print(tsne_hclustering2)
 
 # Cluster1: positive & nonICU 
 # Cluster2: positive & ICU 
-# Cluster4: ICU 
+# Cluster4: negative & ICU 
 # Cluster7: nonICU
 
 
@@ -419,6 +428,7 @@ print(count_matrix[1:10, 1:10])
 # Create a seurat object 
 seurat <- CreateSeuratObject(counts = count_matrix,
                              meta.data = meta)
+print(seurat)
 
 # Normalize your data 
 seurat <- NormalizeData(seurat,
@@ -427,22 +437,29 @@ seurat <- FindVariableFeatures(seurat)
 seurat <- ScaleData(seurat)
 
 
+
 # Run PCA 
 seurat <- RunPCA(seurat)
+print(seurat)
 
-# Cluster 
+# Cluster via Shared Nearest Neighbor (SNN)
 seurat <- FindNeighbors(seurat)
 seurat <- FindClusters(seurat)
+
+print(seurat)
 
 # Run t-SNE (with perplexity 2)
 seurat <- RunTSNE(seurat, 
                   perplexity = 2)
+
+print(seurat)
 
 
 # Plot the PCA result 
 DimPlot(object = seurat, 
         reduction = "pca") + 
         ggtitle("PCA") 
+
 
 # Plot the t-SNE result
 DimPlot(object = seurat, 
