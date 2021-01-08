@@ -32,6 +32,8 @@ pca <- prcomp(feature_matrix,
 # effectively 
 summary(pca)
 
+
+
 # Determine minimum number of PCs (dimensions) for your data 
 
 # Extract proportion of variance explained by PC1-10 
@@ -104,6 +106,7 @@ pca_2D_plot2 <- pca_2D_plot1 +
         facet_grid(~ Covid19)
 
 print(pca_2D_plot2)
+
 
 ########################################## Hierarchical Clustering ##########################################
 
@@ -179,12 +182,12 @@ hierarchical_plot1 <- ggplot(pca_coord_cleaned,
            color = hcluster_number)) +
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(~ hclustering_by) + 
-        labs(title = "Hierarchical clustering (k = 8, h = 100)",
+        labs(title = "Hierarchical clustering (h = 100, k = 8)",
              x = "PC1 (28%)",
              y = "PC2 (19%)") +
         theme_bw()
 
-plot(hierarchical_plot1)
+print(hierarchical_plot1)
 
 
 hierarchical_plot2 <- ggplot(pca_coord_cleaned,
@@ -194,13 +197,13 @@ hierarchical_plot2 <- ggplot(pca_coord_cleaned,
                                  shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(hcluster_number ~ hclustering_by) + 
-        labs(title = "Hierarchical clustering (k = 8, h = 100)",
+        labs(title = "Hierarchical clustering (h = 100, k = 8)",
              x = "PC1 (28%)",
              y = "PC2 (19%)") + 
         theme_bw()
 
 
-plot(hierarchical_plot2)
+print(hierarchical_plot2)
 
 # hcluster_k 
 # cluster1: positive & nonICU 
@@ -441,6 +444,7 @@ seurat <- NormalizeData(seurat,
 seurat <- FindVariableFeatures(seurat)
 seurat <- ScaleData(seurat)
 
+print(seurat)
 
 
 # Run PCA 
@@ -474,7 +478,7 @@ DimPlot(object = seurat,
 # Calculate the Number of Significant Features 
 VariableFeaturePlot(seurat)
 
-# Plote distribution of eigenvalues of the first dimension in each cluster
+# Plot distribution of eigenvalues of the first dimension in each cluster
 VlnPlot(seurat, features = "PC_1")
 VlnPlot(seurat, features = "PC_1", split.by = "ICU")
 VlnPlot(seurat, features = "PC_1", split.by = "Covid19")
