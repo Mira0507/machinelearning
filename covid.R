@@ -145,6 +145,7 @@ pheatmap(coord_matrix,
          clustering_distance_rows = "euclidean",
          annotation_row = meta,
          fontsize_row = 5,
+         border_color = NA,
          main = "Heatmap")
 
 
@@ -361,7 +362,7 @@ tsne_pp <- filter(tsne_compare_df, Perplexity == 2)
 rownames(tsne_pp) <- rownames(meta)
 
 
-# Calculate distance: (X, Y, Z) coordinates
+# Calculate distance: (X, Y) coordinates
 # (returns a distance matrix)
 distance_tsne <- dist(tsne_pp[, 1:2], 
                  method = "euclidean")
@@ -374,7 +375,6 @@ Hierarchical_clustering_tsne <- hclust(distance,
 plot(Hierarchical_clustering_tsne)
 
 # Extract the clustering result (8 clusters)
-
 hcluster_tsne <- cutree(Hierarchical_clustering_tsne,
                         k = 8)
 
