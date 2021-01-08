@@ -132,7 +132,7 @@ print(distance)
 # Perform hierarchical clustering
 # (returns an hclust object)
 Hierarchical_clustering <- hclust(distance, 
-                                  method = "average")
+                                  method = "complete")
 
 # Create a dendrogram
 plot(Hierarchical_clustering)
@@ -152,11 +152,11 @@ pheatmap(coord_matrix,
 # Cluster by cutting the tree 
 # (returns a series of cluster number)
 cut_by_k <- cutree(Hierarchical_clustering, k = 8)
-cut_by_h <- cutree(Hierarchical_clustering, h = 100)
+cut_by_h <- cutree(Hierarchical_clustering, h = 150)
 
 # Re-visit the dendrogram
 plot(Hierarchical_clustering)
-abline(h = 100, col = "red")
+abline(h = 150, col = "red")
 
 print(cut_by_k)
 print(cut_by_h)
@@ -183,7 +183,7 @@ hierarchical_plot1 <- ggplot(pca_coord_cleaned,
            color = hcluster_number)) +
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(~ hclustering_by) + 
-        labs(title = "Hierarchical clustering (h = 100, k = 8)",
+        labs(title = "Hierarchical clustering (h = 150, k = 8)",
              x = "PC1 (28%)",
              y = "PC2 (19%)") +
         theme_bw()
@@ -198,21 +198,13 @@ hierarchical_plot2 <- ggplot(pca_coord_cleaned,
                                  shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
         facet_grid(hcluster_number ~ hclustering_by) + 
-        labs(title = "Hierarchical clustering (h = 100, k = 8)",
+        labs(title = "Hierarchical clustering (h = 150, k = 8)",
              x = "PC1 (28%)",
              y = "PC2 (19%)") + 
         theme_bw()
 
 
 print(hierarchical_plot2)
-
-# hcluster_k 
-# cluster1: positive & nonICU 
-# cluster2: positive 
-# cluster4: ICU 
-# cluster 3 & 7: (relatively) negative 
-
-
 
 
 
@@ -309,10 +301,12 @@ tSNE_fn <- function(pp) {
         
         # tSNE
         set.seed(277)
-        Rtsne(as.matrix(feature_matrix), 
-              PCA = TRUE,              # Preliminary PCA
-              perplexity = pp,         # Perplexity
-              max_iter = 2000,         # Max iteration number  
+        Rtsne(as.matrix(feature_matrix), # Input: read count matrix
+              PCA = TRUE,              # Preliminary PCA (reduces dims down to 50)
+              perplexity = pp,         # Perplexity (generally 5 ~ 50)
+              max_iter = 1000,         # Max iteration number 
+              pca_center = TRUE,
+              pca_scale = TRUE,
               dims = 2)                # Number of output dimensions 
 }
 
@@ -321,6 +315,16 @@ tsne1 <- tSNE_fn(1)
 tsne2 <- tSNE_fn(2)
 tsne5 <- tSNE_fn(5)
 tsne10 <- tSNE_fn(10)
+
+# Monitoring K-L divergence change:  
+# Kullback–Leibler divergence, (also called relative entropy), 
+# is a measure of how one probability (high dim prob) distribution is different 
+# from a second (low dim prob) distribution
+plot(tsne10$itercosts, 
+     type="l", 
+     main="K-L Divergence Change by Every 50 Iterations",
+     ylab="K-L Diveregence",
+     xlab="Number of Itereations (50 per Index)") 
 
 # Set a function for cleaning data 
 data_clean_fn <- function(tsne_object, perplexity) { 
@@ -357,10 +361,10 @@ perplexity_plot <- ggplot(tsne_compare_df,
 
 print(perplexity_plot)
 
-# Subset with Perplexity = 2
-tsne_pp <- filter(tsne_compare_df, Perplexity == 2)
+# Subset with Perplexity = 10
+tsne_pp <- filter(tsne_compare_df, Perplexity == 10)
 rownames(tsne_pp) <- rownames(meta)
-
+print(head(tsne_pp))
 
 # Calculate distance: (X, Y) coordinates
 # (returns a distance matrix)
@@ -369,7 +373,7 @@ distance_tsne <- dist(tsne_pp[, 1:2],
 
 # Perform hierarchical clustering 
 Hierarchical_clustering_tsne <- hclust(distance, 
-                                  method = "average")
+                                  method = "complete")
 
 # Create a dendrogram
 plot(Hierarchical_clustering_tsne)
@@ -404,7 +408,7 @@ tsne_hclustering2 <- ggplot(tsne_pp,
                                 color = ICU,
                                 shape = Covid19)) + 
         geom_point(size = 2, alpha = 0.5) + 
-        facet_grid( ~ hcluster) + 
+        facet_grid(gender ~ hcluster) + 
         labs(title = "t-SNE and Hierarchical Clustering",
              x = "Dim1",
              y = "Dim2") + 
@@ -412,10 +416,6 @@ tsne_hclustering2 <- ggplot(tsne_pp,
 
 print(tsne_hclustering2)
 
-# Cluster1: positive & nonICU 
-# Cluster2: positive & ICU 
-# Cluster4: negative & ICU 
-# Cluster7: nonICU
 
 
 
@@ -457,9 +457,9 @@ seurat <- FindClusters(seurat)
 
 print(seurat)
 
-# Run t-SNE (with perplexity 2)
+# Run t-SNE (with perplexity 10)
 seurat <- RunTSNE(seurat, 
-                  perplexity = 2)
+                  perplexity = 10)
 
 print(seurat)
 
